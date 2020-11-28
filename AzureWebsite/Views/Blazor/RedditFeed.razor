@@ -1,0 +1,60 @@
+﻿@using AzureWebsite.Blazor.Models;
+@using System;
+@using System.Collections.Generic;
+@using System.Linq;
+@using System.Net.Http;
+@using System.Web;
+@using System.Xml.Linq;
+
+
+
+<h3>Example Component</h3>
+<input @bind="message" @bind:event="oninput" />
+<p>message: @message</p>
+@code{
+    string message;
+}
+<h1>Reddit Feed</h1>
+<input @bind="subreddit" @bind:event="oninput"/>
+@*<button @onclick="UpdateYearFromChild">sss</button>*@
+<p>Current subreddit: @subreddit</p>
+@code{
+    string subreddit ="123";
+    //private string status;
+    //private async Task UpdateYearFromChild()
+    //{
+    //     HttpClient wclient = new HttpClient();
+    //     var s = wclient.GetStringAsync($"https://www.reddit.com/r/{subreddit}/.rss").Result;
+    //     status = "123";
+    //}
+}
+
+@{
+    
+    HttpClient wclient = new HttpClient();
+    var task = wclient.GetStringAsync($"https://www.reddit.com/r/blazor/.rss");
+   
+    string RSSData = task.Result;
+    
+   
+    
+
+
+    XDocument xml = XDocument.Parse(RSSData);
+    var response = new RedditResponse(xml.Root);
+
+}
+
+
+@foreach (var x in response.Items)
+{
+    <h3>@x.Title</h3>    
+    <br />
+    @((MarkupString)x.Thumbnail)
+    <br />
+    @x.ExternalLink
+    <br />
+    @x.Description
+    <br />
+}
+

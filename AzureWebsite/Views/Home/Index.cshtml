@@ -1,4 +1,6 @@
-﻿@{
+﻿@using Microsoft.JSInterop;
+@inject IJSRuntime JSRuntime
+@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -7,4 +9,15 @@
     <p>This page was built using <a href="https://dotnet.microsoft.com/apps/aspnet">ASP.NET 5.0</a>.</p>
 </div>
 
-@(await Html.RenderComponentAsync<RazorComponentLibrary.ExampleComponent>(RenderMode.ServerPrerendered))
+
+
+<script>
+    function BlazorBlurElement(element) {
+        if (element instanceof HTMLElement) {
+            element.blur();
+        }
+    }
+</script>
+<script src="_framework/blazor.webassembly.js"></script>
+@*@(await Html.RenderComponentAsync<AzureWebsite.Views.Blazor.RedditFeed>(RenderMode.ServerPrerendered))*@
+@(await Html.RenderComponentAsync<RazorComponentLibrary.RedditFeed>(RenderMode.ServerPrerendered))

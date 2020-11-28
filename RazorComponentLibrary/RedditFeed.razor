@@ -1,0 +1,128 @@
+﻿@using RazorComponentLibrary.Models;
+@using System;
+@using System.Collections.Generic;
+@using System.Linq;
+@using System.Net.Http;
+@using System.Web;
+@using System.Xml.Linq;
+@using Newtonsoft.Json.Linq;
+
+
+<h1>Reddit Feed</h1>
+<datalist id="suggestions">
+    @foreach (var toDo in subreddits)
+    {
+        <option value="@toDo">@toDo</option>
+    }
+</datalist>
+<h4>Search for a subreddit below. Press Enter to display the selected subreddit's RSS feed.</h4>
+<input value="@subreddit" @oninput="@LoadSubReddits" autoComplete="on" list="suggestions" @onkeypress="@OnKeyEvent" @onchange="@OnChange" />
+
+@code{
+    string subreddit = "blazor";
+    string searchTerm { get; set; } = "";
+    List<String> subreddits = new List<String>();
+    private string status;
+    private string RSSData;
+
+
+    public RedditResponse response { get; set; }
+    //[Parameter]
+    //public EventCallback<RedditResponse> ValueChanged { get; set; }
+    HttpClient wclient = new HttpClient();
+
+    private async Task LoadSubReddits(ChangeEventArgs e)
+    {
+        try
+        {
+            subreddits.Clear();
+            this.searchTerm = e.Value as string;
+            var s = await wclient.GetStringAsync($"https://www.reddit.com/subreddits/search.json?q={searchTerm}");
+            dynamic stuff = JObject.Parse(s);
+            foreach (var child in stuff.data.children)
+            {
+                subreddits.Add((string)child.data.display_name_prefixed);
+            }
+        }
+        catch { }
+
+    }
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        this.subreddit = this.searchTerm;
+        await LoadRSS();
+    }
+    private async Task OnKeyEvent(KeyboardEventArgs eventArgs)
+    {
+        if (eventArgs.Key == "Enter")
+        {
+            this.subreddit = this.searchTerm;
+            await LoadRSS();
+        }
+    }
+
+    private async Task LoadRSS()
+
+    {
+        try
+        {
+            if (subreddit.StartsWith("r/"))
+            {
+                RSSData = await wclient.GetStringAsync($"https://www.reddit.com/{subreddit}/.rss");
+            }
+            else
+            {
+                RSSData = await wclient.GetStringAsync($"https://www.reddit.com/r/{subreddit}/.rss");
+            }
+            XDocument xml = XDocument.Parse(RSSData);
+            //await ValueChanged.InvokeAsync(new RedditResponse(xml.Root));
+            response = new RedditResponse(xml.Root);
+            status = response.Link;
+        }
+        catch { }
+
+
+
+
+    }
+    //private async Task UpdateYearFromChild()
+    //{
+
+    //}
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRSS();
+    }
+
+}
+
+<br />
+<br />
+@if (response != null)
+{
+    foreach (var x in response.Items)
+    {
+        <h4>@x.Title</h4>
+        <br />
+        @((MarkupString)x.Thumbnail)
+        <br />
+        @x.ExternalLink
+        <br />
+        @x.Description
+        <br />
+    }
+}
+
+
+@*@{
+
+        HttpClient wclient = new HttpClient();
+        var task = wclient.GetStringAsync($"https://www.reddit.com/r/blazor/.rss");
+
+        string RSSData = task.Result;
+
+        XDocument xml = XDocument.Parse(RSSData);
+        var response = new RedditResponse(xml.Root);
+
+    }*@
+
